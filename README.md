@@ -1,6 +1,6 @@
 # 📚 Kindle Notes to Google Drive
 
-[![CI/CD Pipeline](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/ci.yml)
+[![CI/CD Pipeline](https://github.com/kokito741/kindle-watcher/actions/workflows/ci.yml/badge.svg)](https://github.com/kokito741/kindle-watcher/actions/workflows/ci.yml)
 
 A small service that:
 - watches Gmail for Kindle emails with label `skribe`
