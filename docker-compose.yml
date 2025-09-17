@@ -1,19 +1,15 @@
-version: "3.9"
+version: '3.9'
 
 services:
   kindle-watcher:
-    build: .
+    image: YOUR_DOCKERHUB_USERNAME/kindle-watcher:latest
     container_name: kindle-watcher
     restart: unless-stopped
     volumes:
-      - ./downloads:/app/downloads
-      # credentials.json must be available locally (created in Google Console)
       - ./credentials.json:/app/credentials.json:ro
-      # mount token.json if you already created it locally (first run locally to generate)
       - ./token.json:/app/token.json
+      - ./downloads:/app/downloads
+      - ./kindle_watcher.log:/app/kindle_watcher.log
+      - ./.env:/app/.env:ro
     env_file:
       - .env
-    logging:
-      options:
-        max-size: "10m"
-        max-file: "3"
