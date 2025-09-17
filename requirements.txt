@@ -6,3 +6,5 @@ requests
 python-dotenv
 pushover_complete
 pytest
+google-auth
+google-auth-oauthlib

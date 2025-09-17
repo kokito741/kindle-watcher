@@ -10,3 +10,4 @@ token.json
 
 # Downloads / runtime stuff
 downloads/
+.vscode

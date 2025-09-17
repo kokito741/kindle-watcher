@@ -11,6 +11,8 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
+# Load environment variables
+load_dotenv()
 
 # lazy import of pushover so importing module doesn't perform network calls
 try:
@@ -18,7 +20,6 @@ try:
 except Exception:
     PushoverAPI = None
 
-load_dotenv()
 
 # --- Settings (read from environment) ---
 SCOPES = [
