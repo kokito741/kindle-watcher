@@ -1,0 +1,12 @@
+# Bytecode
+__pycache__/
+*.pyc
+
+# Credentials & secrets
+credentials.json
+token.json
+.env
+*.log
+
+# Downloads / runtime stuff
+downloads/
