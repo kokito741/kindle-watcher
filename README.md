@@ -44,6 +44,15 @@ A browser will open → grant permissions → token.json will be saved locally.
 python main.py     # start service
 tail -f kindle_watcher.log   # watch logs
 ```
+# Configure as a Windows service using NSSM
+
+```bash
+nssm.exe install KindleWatcher
+```
+1. Path: C:\Python311\python.exe (or your Python executable)
+2. Startup directory: folder containing main.py and .env of the program
+3. Arguments: main.py
+
 #  Quick Setup (Docker)
 Run inside an isolated container.(Befire running docker image do "Set up Google OAuth"  and "Configure environment" steps)
 ## Clone repository
