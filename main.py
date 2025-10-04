@@ -53,19 +53,65 @@ def get_pushover():
 # --- Google OAuth credentials helper ---
 def get_credentials():
     creds = None
-    if os.path.exists("token.json"):
-        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
+    try:
+        if os.path.exists("token.json"):
+            creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+            pushover.send_message(PUSHOVER_USER, "Token file found.")
+            logging.info("Token file found.")
         else:
-            # credentials.json must be present (downloaded from Google Cloud Console)
-            flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
-            creds = flow.run_local_server(port=0)
-        with open("token.json", "w") as token:
-            token.write(creds.to_json())
-    return creds
+            pushover.send_message(PUSHOVER_USER, "token.json not found, starting new login flow.")
+            logging.warning("token.json not found, starting new login flow.")
 
+        # If no creds or creds invalid, refresh or recreate
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                try:
+                    creds.refresh(Request())
+                    pushover.send_message(PUSHOVER_USER, "Token refreshed successfully.")
+                    logging.info("Token refreshed successfully.")
+                except Exception as e:
+                    pushover.send_message(PUSHOVER_USER, f"Token refresh failed: {e}")
+                    logging.error(f"Token refresh failed: {e}")
+                    creds = None
+            else:
+                # credentials.json must exist
+                if not os.path.exists("credentials.json"):
+                    msg = "credentials.json not found! Please upload from Google Cloud Console."
+                    pushover.send_message(PUSHOVER_USER, msg)
+                    logging.critical(msg)
+                    print(msg)
+                    return None
+
+                try:
+                    pushover.send_message(PUSHOVER_USER, "Starting new Google login flow...")
+                    logging.info("Starting new Google login flow...")
+                    flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
+                    creds = flow.run_local_server(port=0)
+                    logging.info("Login completed successfully.")
+                    pushover.send_message(PUSHOVER_USER, "Login completed successfully.")
+                except Exception as e:
+                    pushover.send_message(PUSHOVER_USER, f"Login failed: {e}")
+                    logging.exception(f"Login failed: {e}")
+                    print(f"Login error: {e}")
+                    return None
+
+            # Save the credentials for next run
+            try:
+                with open("token.json", "w") as token:
+                    token.write(creds.to_json())
+                message = "Token saved to token.json."
+                logging.info("Token saved to token.json.")
+                pushover.send_message(PUSHOVER_USER, "Token saved to token.json.")
+            except Exception as e:
+                logging.error(f"Failed to save token: {e}")
+                pushover.send_message(PUSHOVER_USER, f"Failed to save token: {e}")
+
+        return creds
+
+    except Exception as e:
+        pushover.send_message(PUSHOVER_USER, f"Credential loading failed: {e}")
+        logging.exception( f"Credential loading failed: {e}")
+        return None
 
 # --- Fetch latest Kindle link from Gmail ---
 def fetch_latest_kindle_link(creds, mailbox_query="label:skribe"):
@@ -158,7 +204,9 @@ def notify(subject, filename):
 
 
 def main_loop_once():
+    pushover.send_message(PUSHOVER_USER, "Kindle watcher starting credentials.")
     creds = get_credentials()
+    pushover.send_message(PUSHOVER_USER, "Kindle watcher finished credentials.")
     link, file_name = fetch_latest_kindle_link(creds)
     if link:
         logging.info(f"Found Kindle link: {file_name} -> {link}")
