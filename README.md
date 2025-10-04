@@ -45,7 +45,7 @@ python main.py     # start service
 tail -f kindle_watcher.log   # watch logs
 ```
 # 🐳 Quick Setup (Docker)
-Run inside an isolated container.(Befire running docker image do "Set up Google OAuth" step)
+Run inside an isolated container.(Befire running docker image do "Set up Google OAuth"  and "Configure environment" steps)
 ## Clone repository
 ```bash
 git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
