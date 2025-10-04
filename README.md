@@ -1,4 +1,4 @@
-# 📚 Kindle Notes to Google Drive
+#  Kindle Notes to Google Drive
 
 [![CI/CD Pipeline](https://github.com/kokito741/kindle-watcher/actions/workflows/ci.yml/badge.svg)](https://github.com/kokito741/kindle-watcher/actions/workflows/ci.yml)
 
@@ -44,7 +44,7 @@ A browser will open → grant permissions → token.json will be saved locally.
 python main.py     # start service
 tail -f kindle_watcher.log   # watch logs
 ```
-# 🐳 Quick Setup (Docker)
+#  Quick Setup (Docker)
 Run inside an isolated container.(Befire running docker image do "Set up Google OAuth"  and "Configure environment" steps)
 ## Clone repository
 ```bash

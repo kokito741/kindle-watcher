@@ -14,6 +14,7 @@ from googleapiclient.http import MediaIoBaseUpload
 # Load environment variables
 load_dotenv()
 
+
 # lazy import of pushover so importing module doesn't perform network calls
 try:
     from pushover_complete import PushoverAPI
@@ -27,11 +28,15 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive.file",
 ]
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
 PUSHOVER_TOKEN = os.getenv("PUSHOVER_TOKEN")
 PUSHOVER_USER = os.getenv("PUSHOVER_USER")
-DOWNLOAD_FOLDER = os.getenv("DOWNLOAD_FOLDER", "./downloads")
-LOG_FILE = os.getenv("LOG_FILE", "kindle_watcher.log")
+DOWNLOAD_FOLDER = os.getenv("DOWNLOAD_FOLDER", os.path.join(BASE_DIR, "downloads"))
+LOG_FILE = os.getenv("LOG_FILE", os.path.join(BASE_DIR, "kindle_watcher.log"))
+CRED_PATH = os.path.join(BASE_DIR, os.getenv("CREDENTIALS_PATH", "credentials.json"))
+TOKEN_PATH = os.path.join(BASE_DIR, os.getenv("TOKEN_PATH", "token.json"))
 
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
@@ -54,9 +59,10 @@ def get_pushover():
 def get_credentials():
     creds = None
     try:
+        logging.info(f"Using token path: {TOKEN_PATH}")
+        logging.info(f"Using credentials path: {CRED_PATH}")
         if os.path.exists("token.json"):
-            creds = Credentials.from_authorized_user_file("token.json", SCOPES)
-            pushover.send_message(PUSHOVER_USER, "Token file found.")
+            creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
             logging.info("Token file found.")
         else:
             pushover.send_message(PUSHOVER_USER, "token.json not found, starting new login flow.")
@@ -67,7 +73,6 @@ def get_credentials():
             if creds and creds.expired and creds.refresh_token:
                 try:
                     creds.refresh(Request())
-                    pushover.send_message(PUSHOVER_USER, "Token refreshed successfully.")
                     logging.info("Token refreshed successfully.")
                 except Exception as e:
                     pushover.send_message(PUSHOVER_USER, f"Token refresh failed: {e}")
@@ -75,7 +80,7 @@ def get_credentials():
                     creds = None
             else:
                 # credentials.json must exist
-                if not os.path.exists("credentials.json"):
+                if not os.path.exists(CRED_PATH):
                     msg = "credentials.json not found! Please upload from Google Cloud Console."
                     pushover.send_message(PUSHOVER_USER, msg)
                     logging.critical(msg)
@@ -83,9 +88,8 @@ def get_credentials():
                     return None
 
                 try:
-                    pushover.send_message(PUSHOVER_USER, "Starting new Google login flow...")
                     logging.info("Starting new Google login flow...")
-                    flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
+                    flow = InstalledAppFlow.from_client_secrets_file(CRED_PATH, SCOPES)
                     creds = flow.run_local_server(port=0)
                     logging.info("Login completed successfully.")
                     pushover.send_message(PUSHOVER_USER, "Login completed successfully.")
@@ -97,11 +101,10 @@ def get_credentials():
 
             # Save the credentials for next run
             try:
-                with open("token.json", "w") as token:
+                with open(TOKEN_PATH, "w") as token:
                     token.write(creds.to_json())
                 message = "Token saved to token.json."
                 logging.info("Token saved to token.json.")
-                pushover.send_message(PUSHOVER_USER, "Token saved to token.json.")
             except Exception as e:
                 logging.error(f"Failed to save token: {e}")
                 pushover.send_message(PUSHOVER_USER, f"Failed to save token: {e}")
@@ -159,6 +162,9 @@ def fetch_latest_kindle_link(creds, mailbox_query="label:skribe"):
 
 def download_file_from_link(url, filename):
     try:
+        # Ensure the download folder exists
+        os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
+        path = os.path.join(DOWNLOAD_FOLDER, f"{filename}.pdf")
         headers = {"User-Agent": "Mozilla/5.0"}
         response = requests.get(url, headers=headers, stream=True, timeout=60)
         response.raise_for_status()
@@ -189,37 +195,25 @@ def upload_to_drive(creds, filename):
     except Exception as e:
         logging.error(f"Upload to Drive failed: {e}")
 
-
-def notify(subject, filename):
-    pushover = get_pushover()
-    if not pushover:
-        logging.info("Pushover not configured; skipping notification.")
-        return
-    try:
-        message = f"Uploaded {filename} from Kindle note: {subject}"
-        pushover.send_message(PUSHOVER_USER, message)
-        logging.info("Pushover notification sent.")
-    except Exception as e:
-        logging.error(f"Pushover notification failed: {e}")
-
-
 def main_loop_once():
-    pushover.send_message(PUSHOVER_USER, "Kindle watcher starting credentials.")
     creds = get_credentials()
-    pushover.send_message(PUSHOVER_USER, "Kindle watcher finished credentials.")
     link, file_name = fetch_latest_kindle_link(creds)
     if link:
         logging.info(f"Found Kindle link: {file_name} -> {link}")
         local_file = download_file_from_link(link, file_name)
         if local_file:
             upload_to_drive(creds, local_file)
-            notify(file_name, local_file)
+            pushover.send_message(PUSHOVER_USER, f"Uploaded {file_name} from Kindle note: {local_file}")
     else:
         logging.info("No new Kindle emails found.")
 
 
 if __name__ == "__main__":
     # run once and loop; running locally first time will open browser for OAuth.
+    logging.info(f"Script started from: {os.getcwd()}")
+    logging.info(f"Base dir: {BASE_DIR}")
+    logging.info(f"Files in base dir: {os.listdir(BASE_DIR)}")
+
     pushover = get_pushover()
     if pushover:
         try:
