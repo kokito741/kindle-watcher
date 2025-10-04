@@ -7,7 +7,6 @@ A small service that:
 - downloads the Kindle PDF
 - uploads it to Google Drive
 - optionally sends a Pushover notification
-
 # Quick setup (local)
 ```bash
 git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
@@ -30,6 +29,8 @@ DOWNLOAD_FOLDER=./downloads
 LOG_FILE=kindle_watcher.log
 ```
 ## Set up Google OAuth
+
+![WARNING](https://img.shields.io/badge/WARNING-Token_Expires_Weekly-orange)
 
 1. Go to Google Cloud Console
 2. Enable Gmail API and Google Drive API.
